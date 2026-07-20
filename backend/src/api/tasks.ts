@@ -1,8 +1,9 @@
 import express, { NextFunction, Response } from 'express';
 import { Op, WhereOptions } from 'sequelize';
+import sequelize from '../database';
 import TaskModel from '../database/models/task.model';
 import Task from '../interfaces/Task';
-import { GetPaginatedResponse } from '../interfaces/CrudResponse';
+import { CrudResponse, GetPaginatedResponse } from '../interfaces/CrudResponse';
 import ErrorResponse from '../interfaces/ErrorResponse';
 
 const router = express.Router();
@@ -66,6 +67,33 @@ router.get('/', async (req, res: Response<GetPaginatedResponse<Task> | ErrorResp
   } catch (error) {
     next(error);
   }
+});
+
+router.post('/', async (req, res: Response<CrudResponse<Task> | ErrorResponse>, next: NextFunction) => {
+  const { title, description } = req.body;
+
+  const trimmedTitle = typeof title === 'string' ? title.trim() : '';
+
+  if (trimmedTitle.length === 0) {
+    res.status(400).json({ message: 'title is required and must be a non-empty string' });
+    return;
+  }
+
+  if (description !== undefined && description !== null && typeof description !== 'string') {
+    res.status(400).json({ message: 'description must be a string' });
+    return;
+  }
+
+  try {
+    const task = await sequelize.models.Task.create({
+      title: trimmedTitle,
+      description: typeof description === 'string' ? description.trim() : null,
+    });
+
+    res.status(201).json({ data: task as unknown as Task });
+  } catch (error) {
+    next(error);
+  } 
 });
 
 export default router;

@@ -26,7 +26,7 @@ class Task extends Model<Task> {
     type: DataTypes.TEXT,
     comment: 'Description of the task',
   })
-  declare description: string;
+  declare description: string | null;
 
   @Default(false)
   @Column({
