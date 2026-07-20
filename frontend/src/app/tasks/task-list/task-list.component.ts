@@ -1,4 +1,6 @@
 import { Component, OnInit } from '@angular/core';
+import { Subject } from 'rxjs';
+import { switchMap } from 'rxjs/operators';
 import { LocalStorageService } from '../../shared/local-storage.service';
 import { Task } from '../task.model';
 import { TaskService } from '../task.service';
@@ -47,6 +49,11 @@ export class TaskListComponent implements OnInit {
 
   private searchTimeout?: ReturnType<typeof setTimeout>;
 
+  // Fetches are triggered through this subject + switchMap so that a new
+  // request (page change, filter toggle, search) cancels any in-flight one
+  // instead of racing it and possibly overwriting fresh data with stale data.
+  private readonly fetchTrigger$ = new Subject<void>();
+
   constructor(
     private taskService: TaskService,
     private localStorageService: LocalStorageService,
@@ -54,28 +61,35 @@ export class TaskListComponent implements OnInit {
 
   ngOnInit(): void {
     this.showCompleted = this.localStorageService.getItem<boolean>(SHOW_COMPLETED_STORAGE_KEY, false);
+
+    this.fetchTrigger$
+      .pipe(
+        switchMap(() => {
+          const status = this.showCompleted ? undefined : 'incomplete';
+          return this.taskService.getTasks(this.page, this.pageSize, this.searchTerm, status);
+        }),
+      )
+      .subscribe({
+        next: response => {
+          this.tasks = response.data.map(task => ({ ...task, selected: false }));
+          this.total = response.pagination.total;
+          this.totalPages = response.pagination.totalPages;
+          this.loading = false;
+          this.updateSelectionState();
+        },
+        error: () => {
+          this.error = 'Failed to load tasks.';
+          this.loading = false;
+        },
+      });
+
     this.fetchTasks();
   }
 
   fetchTasks(): void {
     this.loading = true;
     this.error = '';
-
-    const status = this.showCompleted ? undefined : 'incomplete';
-
-    this.taskService.getTasks(this.page, this.pageSize, this.searchTerm, status).subscribe({
-      next: response => {
-        this.tasks = response.data.map(task => ({ ...task, selected: false }));
-        this.total = response.pagination.total;
-        this.totalPages = response.pagination.totalPages;
-        this.loading = false;
-        this.updateSelectionState();
-      },
-      error: () => {
-        this.error = 'Failed to load tasks.';
-        this.loading = false;
-      },
-    });
+    this.fetchTrigger$.next();
   }
 
   onSearchChange(): void {
