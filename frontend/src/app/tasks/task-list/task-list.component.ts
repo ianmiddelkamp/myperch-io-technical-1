@@ -64,6 +64,9 @@ export class TaskListComponent implements OnInit {
 
     this.fetchTrigger$
       .pipe(
+        // switchMap unsubscribes from the previous getTasks() call as soon as
+        // a new one starts, so an older, still-pending request can never
+        // resolve after a newer one and overwrite it with stale data.
         switchMap(() => {
           const status = this.showCompleted ? undefined : 'incomplete';
           return this.taskService.getTasks(this.page, this.pageSize, this.searchTerm, status);
