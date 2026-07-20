@@ -1,4 +1,4 @@
-import express, { Response } from 'express';
+import express, { NextFunction, Response } from 'express';
 import { Op, WhereOptions } from 'sequelize';
 import TaskModel from '../database/models/task.model';
 import Task from '../interfaces/Task';
@@ -10,12 +10,12 @@ const router = express.Router();
 const DEFAULT_PAGE_SIZE = 10;
 const MAX_PAGE_SIZE = 100;
 
-router.get('/', async (req, res: Response<GetPaginatedResponse<Task> | ErrorResponse>) => {
+router.get('/', async (req, res: Response<GetPaginatedResponse<Task> | ErrorResponse>, next: NextFunction) => {
   const page: number = Number(req.query.page) || 1;
   const requestedPageSize: number = Number(req.query.pageSize) || DEFAULT_PAGE_SIZE;
   const pageSize: number = Math.min(requestedPageSize, MAX_PAGE_SIZE);
 
-  if (page < 1 || pageSize < 1) {
+  if (!Number.isInteger(page) || !Number.isInteger(pageSize) || page < 1 || pageSize < 1) {
     res.status(400).json({ message: 'page and pageSize must be positive integers' });
     return;
   }
@@ -33,24 +33,28 @@ router.get('/', async (req, res: Response<GetPaginatedResponse<Task> | ErrorResp
     };
   }
 
-  const { rows: tasks, count: total } = await TaskModel.findAndCountAll({
-    where,
-    order: [['id', 'ASC']],
-    limit: pageSize,
-    offset: (page - 1) * pageSize,
-  });
+  try {
+    const { rows: tasks, count: total } = await TaskModel.findAndCountAll({
+      where,
+      order: [['id', 'ASC']],
+      limit: pageSize,
+      offset: (page - 1) * pageSize,
+    });
 
-  const response: GetPaginatedResponse<Task> = {
-    data: tasks,
-    pagination: {
-      page,
-      pageSize,
-      total,
-      totalPages: Math.ceil(total / pageSize),
-    },
-  };
+    const response: GetPaginatedResponse<Task> = {
+      data: tasks,
+      pagination: {
+        page,
+        pageSize,
+        total,
+        totalPages: Math.ceil(total / pageSize),
+      },
+    };
 
-  res.json(response);
+    res.json(response);
+  } catch (error) {
+    next(error);
+  }
 });
 
 export default router;
