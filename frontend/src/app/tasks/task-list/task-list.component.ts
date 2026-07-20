@@ -1,3 +1,4 @@
+import { HttpErrorResponse } from '@angular/common/http';
 import { Component, OnInit } from '@angular/core';
 import { Subject } from 'rxjs';
 import { switchMap } from 'rxjs/operators';
@@ -8,6 +9,7 @@ import { TaskService } from '../task.service';
 
 const SEARCH_DEBOUNCE_MS = 300;
 const SHOW_COMPLETED_STORAGE_KEY = 'taskList.showCompleted';
+const TOAST_DURATION_MS = 4000;
 
 interface TaskRow extends Task {
   selected: boolean;
@@ -24,6 +26,10 @@ export class TaskListComponent implements OnInit {
   loading = false;
 
   error = '';
+
+  toastMessage = '';
+
+  toastType: 'success' | 'danger' = 'danger';
 
   searchTerm = '';
 
@@ -49,6 +55,8 @@ export class TaskListComponent implements OnInit {
   allOnPageSelected = false;
 
   private searchTimeout?: ReturnType<typeof setTimeout>;
+
+  private toastTimeout?: ReturnType<typeof setTimeout>;
 
   // Fetches are triggered through this subject + switchMap so that a new
   // request (page change, filter toggle, search) cancels any in-flight one
@@ -144,8 +152,31 @@ export class TaskListComponent implements OnInit {
     this.updateSelectionState();
   }
 
-  onAddTask(): void {
-    // TODO: open add-task form
+  async onAddTask(): Promise<void> {
+    const result = await this.dialogService.addTask();
+
+    if (!result) {
+      return;
+    }
+
+    this.taskService.createTask(result.title, result.description).subscribe({
+      next: () => {
+        this.showToast('Task added.', 'success');
+        this.fetchTasks();
+      },
+      error: (err: HttpErrorResponse) => {
+        this.showToast(err.error?.message || 'Failed to add task.', 'danger');
+      },
+    });
+  }
+
+  showToast(message: string, type: 'success' | 'danger' = 'danger'): void {
+    clearTimeout(this.toastTimeout);
+    this.toastMessage = message;
+    this.toastType = type;
+    this.toastTimeout = setTimeout(() => {
+      this.toastMessage = '';
+    }, TOAST_DURATION_MS);
   }
 
   async onEditTask(task: Task): Promise<void> {

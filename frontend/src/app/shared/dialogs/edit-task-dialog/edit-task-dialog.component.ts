@@ -11,6 +11,10 @@ export interface EditTaskDialogResult {
   templateUrl: './edit-task-dialog.component.html',
 })
 export class EditTaskDialogComponent implements OnInit {
+  @Input() dialogTitle = 'Edit Task';
+
+  @Input() saveLabel = 'Save';
+
   @Input() taskTitle = '';
 
   @Input() taskDescription = '';
