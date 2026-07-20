@@ -12,7 +12,7 @@ const SHOW_COMPLETED_STORAGE_KEY = 'taskList.showCompleted';
 const TOAST_DURATION_MS = 4000;
 // Keeps the shimmer visible for at least this long, so a fast response
 // doesn't just flash the row instead of being perceptible.
-const MIN_ROW_LOADING_MS = 400;
+const MIN_ROW_LOADING_MS = 800;
 
 interface TaskRow extends Task {
   selected: boolean;
@@ -251,29 +251,11 @@ export class TaskListComponent implements OnInit {
   }
 
   async onBulkMarkComplete(): Promise<void> {
-    const confirmed = await this.dialogService.confirm({
-      message: `Mark ${this.selectedCount} selected task(s) as complete?`,
-      confirmLabel: 'Mark Complete',
-    });
-
-    if (!confirmed) {
-      return;
-    }
-
-    // TODO: bulk mark complete
+    await this.bulkUpdateStatus(true, 'Mark Complete');
   }
 
   async onBulkMarkIncomplete(): Promise<void> {
-    const confirmed = await this.dialogService.confirm({
-      message: `Mark ${this.selectedCount} selected task(s) as incomplete?`,
-      confirmLabel: 'Mark Incomplete',
-    });
-
-    if (!confirmed) {
-      return;
-    }
-
-    // TODO: bulk mark incomplete
+    await this.bulkUpdateStatus(false, 'Mark Incomplete');
   }
 
   async onBulkDelete(): Promise<void> {
@@ -288,6 +270,60 @@ export class TaskListComponent implements OnInit {
     }
 
     // TODO: bulk delete
+  }
+
+  private async bulkUpdateStatus(completed: boolean, confirmLabel: string): Promise<void> {
+    const selectedTasks = this.tasks.filter(task => task.selected);
+
+    const confirmed = await this.dialogService.confirm({
+      message: `Mark ${selectedTasks.length} selected task(s) as ${completed ? 'complete' : 'incomplete'}?`,
+      confirmLabel,
+    });
+
+    if (!confirmed) {
+      return;
+    }
+
+    selectedTasks.forEach(task => {
+      task.loading = true;
+    });
+    this.actionInProgress = true;
+    const startedAt = Date.now();
+    const ids = selectedTasks.map(task => task.id);
+
+    this.taskService.bulkUpdateStatus(ids, completed).subscribe({
+      next: updatedTasks => {
+        this.finishRowAction(startedAt, () => {
+          // Replace in place instead of refetching, same as onEditTask, so
+          // a bulk action doesn't reset/reload everything else on screen.
+          const updatedById = new Map(updatedTasks.map(task => [task.id, task]));
+
+          selectedTasks.forEach(task => {
+            const updated = updatedById.get(task.id);
+
+            if (updated) {
+              task.completed = updated.completed;
+              task.updatedAt = updated.updatedAt;
+            }
+
+            task.loading = false;
+            task.selected = false;
+          });
+
+          this.updateSelectionState();
+          this.showToast(`${selectedTasks.length} task(s) marked ${completed ? 'complete' : 'incomplete'}.`, 'success');
+          this.fetchTrigger$.next(); // refresh the list to update the "completed" filter if needed
+        });
+      },
+      error: (err: HttpErrorResponse) => {
+        this.finishRowAction(startedAt, () => {
+          selectedTasks.forEach(task => {
+            task.loading = false;
+          });
+          this.showToast(err.error?.message || 'Failed to update tasks.', 'danger');
+        });
+      },
+    });
   }
 
   // Applies a row-action's result (success or error) after waiting out
