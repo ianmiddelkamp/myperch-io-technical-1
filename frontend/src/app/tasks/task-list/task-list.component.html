@@ -1,4 +1,48 @@
-<div class="task-list">
+<div class="container task-list">
+  <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+    <div class="d-flex gap-2 flex-wrap w-100 align-items-center">
+
+
+      <button type="button" class="btn btn-success" [disabled]="!anySelected || allSelectedCompleted"
+        (click)="onBulkMarkComplete()">
+        Mark Complete
+      </button>
+      <button type="button" class="btn btn-secondary" [disabled]="!anySelected || allSelectedIncomplete"
+        (click)="onBulkMarkIncomplete()">
+        Mark Incomplete
+      </button>
+      <button type="button" class="btn btn-danger " [disabled]="!anySelected" (click)="onBulkDelete()">
+        Delete Selected
+      </button>
+      <button type="button" class="btn btn-primary ms-auto" (click)="onAddTask()">
+        <i class="fas fa-plus"></i> Add Task
+      </button>
+    </div>
+
+  </div>
+
+  <div class="d-flex gap-2 mb-3 flex-wrap">
+    <div class="input-group flex-grow-1">
+      <input type="search" class="form-control" placeholder="Search tasks..." [(ngModel)]="searchTerm"
+        (ngModelChange)="onSearchChange()" />
+      <button type="button" class="btn btn-outline-secondary" [disabled]="!searchTerm" (click)="clearSearch()">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+
+    <div class="form-check d-flex align-items-center">
+      <input
+        type="checkbox"
+        class="form-check-input"
+        id="showCompletedOnly"
+        [checked]="showCompleted"
+        (change)="onShowCompletedChange($any($event.target).checked)"
+      />
+      <label class="form-check-label ms-1" for="showCompletedOnly">Show Completed</label>
+    </div>
+  </div>
+
+
   <div *ngIf="loading" class="text-center py-4">
     <span class="spinner-border" role="status" aria-hidden="true"></span>
   </div>
@@ -10,25 +54,76 @@
   <ng-container *ngIf="!loading && !error">
     <p *ngIf="tasks.length === 0" class="text-muted">No tasks yet.</p>
 
-    <ul *ngIf="tasks.length > 0" class="list-group">
-      <li
-        *ngFor="let task of tasks"
-        class="list-group-item d-flex justify-content-between align-items-start"
-      >
-        <div>
-          <div class="fw-bold" [class.text-decoration-line-through]="task.completed">
-            {{ task.title }}
-          </div>
-          <div class="text-muted small">{{ task.description }}</div>
-        </div>
-        <span
-          class="badge"
-          [class.bg-success]="task.completed"
-          [class.bg-secondary]="!task.completed"
-        >
-          {{ task.completed ? 'Completed' : 'Incomplete' }}
-        </span>
-      </li>
-    </ul>
+    <table *ngIf="tasks.length > 0" class="table align-middle">
+      <thead>
+        <tr>
+          <th scope="col">
+            <input type="checkbox" [checked]="allOnPageSelected"
+              (change)="toggleSelectAll($any($event.target).checked)" />
+          </th>
+          <th scope="col">Task</th>     
+          <th scope="col"></th>
+          <th scope="col" class="text-end">Completed</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let task of tasks" class="task-row">
+          <td>
+            <input type="checkbox" [checked]="task.selected" (change)="toggleSelection(task)" />
+          </td>
+          <td class="w-100">
+            <div class="fw-bold" [class.text-decoration-line-through]="task.completed">
+              {{ task.title }}
+            </div>
+            <div class="text-muted small">{{ task.description }}</div>
+            <div class="task-timestamps text-muted small">
+              Created: {{ task.createdAt | date: 'medium' }} &middot; Updated: {{ task.updatedAt | date: 'medium' }}
+            </div>
+          </td>
+         
+          <td>
+            <div class="d-flex gap-1">
+              <button type="button" class="btn btn-sm btn-light" title="Edit" aria-label="Edit task"
+                (click)="onEditTask(task)">
+                <i class="fas fa-pencil-alt text-secondary"></i>
+              </button>
+              <button type="button" class="btn btn-sm  btn-light" title="Delete" aria-label="Delete task"
+                (click)="onDeleteTask(task)">
+                <i class="fas fa-trash text-danger"></i>
+              </button>
+            </div>
+          </td>
+          <td class="text-end">
+            <button
+              type="button"
+              class="btn btn-link p-0"
+              [title]="task.completed ? 'Mark incomplete' : 'Mark complete'"
+              [attr.aria-label]="task.completed ? 'Mark incomplete' : 'Mark complete'"
+              (click)="onToggleComplete(task)"
+            >
+              <i class="fas fa-2x fa-check-circle text-success" *ngIf="task.completed"></i>
+              <i class="far fa-2x fa-circle text-secondary" *ngIf="!task.completed"></i>
+            </button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <nav *ngIf="totalPages > 1" aria-label="Task pagination" class="d-flex align-items-center justify-content-between ">
+      <span *ngIf="anySelected" class="text-muted small">{{ selectedCount }} selected</span> 
+      <ul class="pagination">
+        <li>
+          <a href="#" class="page-link" [class.disabled]="page <= 1"
+            (click)="$event.preventDefault(); goToPage(page - 1)">Previous</a>
+        </li>
+        <li>
+          <span class="page-link status">Page {{ page }} of {{ totalPages }}</span>
+        </li>
+        <li>
+          <a href="#" class="page-link" [class.disabled]="page >= totalPages"
+            (click)="$event.preventDefault(); goToPage(page + 1)">Next</a>
+        </li>
+      </ul>
+    </nav>
   </ng-container>
 </div>

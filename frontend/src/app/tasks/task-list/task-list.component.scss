@@ -1,0 +1,12 @@
+.pagination{
+  margin-left:auto;
+  margin-bottom: 0;
+  justify-content: end
+}
+.page-link {
+  border: none !important;
+  background-color: transparent !important;
+  .status {
+    cursor: default;
+  } 
+}
