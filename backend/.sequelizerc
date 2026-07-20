@@ -1,0 +1,16 @@
+const path = require('path');
+let seedersPath;
+
+if (process.env.GENERATE_SEED === 'true') {
+	seedersPath = path.resolve('src', 'database', 'seeders');
+} else {
+	seedersPath = path.resolve('dist', 'src', 'database', 'seeders');
+}
+
+module.exports = {
+	'config': path.resolve('dist', 'src', 'config', 'database.config.js'),
+	'models-path': path.resolve('src', 'database', 'models'),
+	'seeders-path': seedersPath,
+	'migrations-source-path': path.resolve('src', 'database', 'migrations'),
+	'migrations-compiled-path': path.resolve('dist', 'src', 'database', 'migrations')
+};

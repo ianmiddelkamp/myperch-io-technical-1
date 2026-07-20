@@ -1,0 +1,55 @@
+services:
+  postgres:
+    image: postgis/postgis:14-3.3
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      API_DB_USER: ${API_DB_USER}
+      API_DB_PASSWORD: ${API_DB_PASSWORD}
+      API_DB_NAME: ${API_DB_NAME}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./db-init:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 2s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build: ./backend
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: development
+      PORT: 3000
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: ${API_DB_USER}
+      DB_PASSWORD: ${API_DB_PASSWORD}
+      DB_DATABASE: ${API_DB_NAME}
+    volumes:
+      - ./backend:/app
+      - api-node-modules:/app/node_modules
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  app:
+    build: ./frontend
+    ports:
+      - "4200:4200"
+    environment:
+      NODE_ENV: development
+    volumes:
+      - ./frontend:/app
+      - app-node-modules:/app/node_modules
+    depends_on:
+      - api
+
+volumes:
+  postgres-data:
+  api-node-modules:
+  app-node-modules:
