@@ -96,4 +96,64 @@ router.post('/', async (req, res: Response<CrudResponse<Task> | ErrorResponse>, 
   } 
 });
 
+router.patch('/:id', async (req, res: Response<CrudResponse<Task> | ErrorResponse>, next: NextFunction) => {
+  const id = Number(req.params.id);
+
+  if (!Number.isInteger(id)) {
+    res.status(400).json({ message: 'id must be an integer' });
+    return;
+  }
+
+  const { title, description, completed } = req.body;
+
+  const updates: { title?: string; description?: string | null; completed?: boolean } = {};
+
+  if (title !== undefined) {
+    if (typeof title !== 'string' || title.trim().length === 0) {
+      res.status(400).json({ message: 'title must be a non-empty string' });
+      return;
+    }
+
+    updates.title = title.trim();
+  }
+
+  if (description !== undefined) {
+    if (description !== null && typeof description !== 'string') {
+      res.status(400).json({ message: 'description must be a string' });
+      return;
+    }
+
+    updates.description = typeof description === 'string' ? description.trim() : null;
+  }
+
+  if (completed !== undefined) {
+    if (typeof completed !== 'boolean') {
+      res.status(400).json({ message: 'completed must be a boolean' });
+      return;
+    }
+
+    updates.completed = completed;
+  }
+
+  if (Object.keys(updates).length === 0) {
+    res.status(400).json({ message: 'at least one of title, description, completed must be provided' });
+    return;
+  }
+
+  try {
+    const task = await sequelize.models.Task.findByPk(id);
+
+    if (!task) {
+      res.status(404).json({ message: `Task ${id} not found` });
+      return;
+    }
+
+    await task.update(updates);
+
+    res.json({ data: task as unknown as Task });
+  } catch (error) {
+    next(error);
+  }
+});
+
 export default router;
