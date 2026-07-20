@@ -1,5 +1,4 @@
 import sequelize from '../../src/database';
-import Task from '../../src/database/models/task.model';
 
 const sampleTasks = [
   { title: 'Set up project', description: 'Clone boilerplates and get the stack running', completed: true },
@@ -33,7 +32,7 @@ const sampleTasks = [
 ];
 
 async function seed() {
-  await Task.bulkCreate(sampleTasks)
+  await sequelize.models.Task.bulkCreate(sampleTasks)
     .catch(error => console.error(error))
     .finally(async () => {
       await sequelize.close();
