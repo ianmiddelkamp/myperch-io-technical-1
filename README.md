@@ -47,6 +47,17 @@ Everything runs via Docker Compose — Postgres, the API, and the Angular dev se
 The API is also reachable directly at [http://localhost:3000](http://localhost:3000)
 (e.g. `GET /v1/tasks`).
 
+### Seeding sample data (optional)
+
+To populate a handful of sample tasks for manual testing:
+
+```bash
+docker compose exec api npm run db:seed
+```
+
+This just inserts rows (`bulkCreate`, no truncation first), so running it more than
+once will duplicate the sample tasks — fine for poking around, but not idempotent.
+
 ### Stopping / resetting
 
 ```bash
