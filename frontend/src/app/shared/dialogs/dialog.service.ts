@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
+import { NgbModal, NgbModalOptions } from '@ng-bootstrap/ng-bootstrap';
 import { ConfirmationDialogComponent } from './confirmation-dialog/confirmation-dialog.component';
 import { EditTaskDialogComponent, EditTaskDialogResult } from './edit-task-dialog/edit-task-dialog.component';
 
@@ -15,12 +15,20 @@ export interface EditableTask {
   description: string | null;
 }
 
+// Shared across every dialog: backdrop 'static' means clicking outside the
+// dialog does nothing (only Cancel/X/Escape close it), and centered
+// vertically centers it instead of pinning it near the top of the viewport.
+const MODAL_OPTIONS: NgbModalOptions = {
+  backdrop: 'static',
+  centered: true,
+};
+
 @Injectable({ providedIn: 'root' })
 export class DialogService {
   constructor(private modalService: NgbModal) {}
 
   confirm(options: ConfirmOptions): Promise<boolean> {
-    const modalRef = this.modalService.open(ConfirmationDialogComponent);
+    const modalRef = this.modalService.open(ConfirmationDialogComponent, MODAL_OPTIONS);
 
     modalRef.componentInstance.title = options.title ?? 'Please confirm';
     modalRef.componentInstance.message = options.message;
@@ -40,7 +48,7 @@ export class DialogService {
   }
 
   editTask(task: EditableTask): Promise<EditTaskDialogResult | null> {
-    const modalRef = this.modalService.open(EditTaskDialogComponent);
+    const modalRef = this.modalService.open(EditTaskDialogComponent, MODAL_OPTIONS);
 
     modalRef.componentInstance.taskTitle = task.title;
     modalRef.componentInstance.taskDescription = task.description ?? '';
@@ -52,7 +60,7 @@ export class DialogService {
   }
 
   addTask(): Promise<EditTaskDialogResult | null> {
-    const modalRef = this.modalService.open(EditTaskDialogComponent);
+    const modalRef = this.modalService.open(EditTaskDialogComponent, MODAL_OPTIONS);
 
     modalRef.componentInstance.dialogTitle = 'Add Task';
     modalRef.componentInstance.saveLabel = 'Add';
