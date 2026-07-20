@@ -96,6 +96,35 @@ router.post('/', async (req, res: Response<CrudResponse<Task> | ErrorResponse>, 
   } 
 });
 
+// Registered before /:id so Express matches this literal path instead of
+// treating "bulk" as the :id param.
+router.patch('/bulk', async (req, res: Response<CrudResponse<Task[]> | ErrorResponse>, next: NextFunction) => {
+  const { ids, completed } = req.body;
+
+  if (!Array.isArray(ids) || ids.length === 0 || !ids.every((id: unknown) => Number.isInteger(id))) {
+    res.status(400).json({ message: 'ids must be a non-empty array of integers' });
+    return;
+  }
+
+  if (typeof completed !== 'boolean') {
+    res.status(400).json({ message: 'completed is required and must be a boolean' });
+    return;
+  }
+
+  try {
+    await sequelize.models.Task.update({ completed }, { where: { id: { [Op.in]: ids } } });
+
+    const tasks = await sequelize.models.Task.findAll({
+      where: { id: { [Op.in]: ids } },
+      order: [['id', 'ASC']],
+    });
+
+    res.json({ data: tasks as unknown as Task[] });
+  } catch (error) {
+    next(error);
+  }
+});
+
 router.patch('/:id', async (req, res: Response<CrudResponse<Task> | ErrorResponse>, next: NextFunction) => {
   const id = Number(req.params.id);
 
