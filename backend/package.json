@@ -8,6 +8,7 @@
   },
   "scripts": {
     "db:sync": "ts-node scripts/database/syncDatabase.ts",
+    "db:seed": "ts-node scripts/database/seedTasks.ts",
     "db:setup": "npx sequelize-cli-typescript db:create && npm run db:sync",
     "db:setup:all": "npm run build && npm run db:setup && NODE_ENV=test npm run db:setup",
     "db:drop": "npx sequelize-cli-typescript db:drop",
