@@ -141,6 +141,9 @@ export class TaskListComponent implements OnInit {
   }
 
   goToPage(page: number): void {
+    if(this.actionInProgress) {
+      return;
+    }
     if (page < 1 || page > this.totalPages) {
       return;
     }
