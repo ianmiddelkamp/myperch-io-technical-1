@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { Subject } from 'rxjs';
 import { switchMap } from 'rxjs/operators';
+import { DialogService } from '../../shared/dialogs/dialog.service';
 import { LocalStorageService } from '../../shared/local-storage.service';
 import { Task } from '../task.model';
 import { TaskService } from '../task.service';
@@ -57,6 +58,7 @@ export class TaskListComponent implements OnInit {
   constructor(
     private taskService: TaskService,
     private localStorageService: LocalStorageService,
+    private dialogService: DialogService,
   ) {}
 
   ngOnInit(): void {
@@ -146,11 +148,27 @@ export class TaskListComponent implements OnInit {
     // TODO: open add-task form
   }
 
-  onEditTask(task: Task): void {
-    // TODO: open edit-task form
+  async onEditTask(task: Task): Promise<void> {
+    const result = await this.dialogService.editTask(task);
+
+    if (!result) {
+      return;
+    }
+
+    // TODO: PATCH task title/description
   }
 
-  onDeleteTask(task: Task): void {
+  async onDeleteTask(task: Task): Promise<void> {
+    const confirmed = await this.dialogService.confirm({
+      title: 'Delete task',
+      message: `Delete "${task.title}"? This cannot be undone.`,
+      confirmLabel: 'Delete',
+    });
+
+    if (!confirmed) {
+      return;
+    }
+
     // TODO: delete task
   }
 
@@ -158,15 +176,43 @@ export class TaskListComponent implements OnInit {
     // TODO: PATCH task completed status
   }
 
-  onBulkMarkComplete(): void {
+  async onBulkMarkComplete(): Promise<void> {
+    const confirmed = await this.dialogService.confirm({
+      message: `Mark ${this.selectedCount} selected task(s) as complete?`,
+      confirmLabel: 'Mark Complete',
+    });
+
+    if (!confirmed) {
+      return;
+    }
+
     // TODO: bulk mark complete
   }
 
-  onBulkMarkIncomplete(): void {
+  async onBulkMarkIncomplete(): Promise<void> {
+    const confirmed = await this.dialogService.confirm({
+      message: `Mark ${this.selectedCount} selected task(s) as incomplete?`,
+      confirmLabel: 'Mark Incomplete',
+    });
+
+    if (!confirmed) {
+      return;
+    }
+
     // TODO: bulk mark incomplete
   }
 
-  onBulkDelete(): void {
+  async onBulkDelete(): Promise<void> {
+    const confirmed = await this.dialogService.confirm({
+      title: 'Delete tasks',
+      message: `Delete ${this.selectedCount} selected task(s)? This cannot be undone.`,
+      confirmLabel: 'Delete',
+    });
+
+    if (!confirmed) {
+      return;
+    }
+
     // TODO: bulk delete
   }
 
