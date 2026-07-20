@@ -39,4 +39,10 @@ export class TaskService {
       .post<CrudResponse<Task>>(this.baseUrl, { title, description })
       .pipe(map(response => response.data));
   }
+
+  updateTask(id: number, changes: Partial<Pick<Task, 'title' | 'description' | 'completed'>>): Observable<Task> {
+    return this.http
+      .patch<CrudResponse<Task>>(`${this.baseUrl}/${id}`, changes)
+      .pipe(map(response => response.data));
+  }
 }
