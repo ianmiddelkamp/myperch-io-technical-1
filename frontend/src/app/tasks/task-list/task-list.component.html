@@ -11,9 +11,6 @@
         (click)="onBulkMarkIncomplete()">
         Mark Incomplete
       </button>
-      <button type="button" class="btn btn-danger " [disabled]="!anySelected || actionInProgress" (click)="onBulkDelete()">
-        Delete Selected
-      </button>
       <button type="button" class="btn btn-primary ms-auto" (click)="onAddTask()">
         <i class="fas fa-plus"></i> Add Task
       </button>
