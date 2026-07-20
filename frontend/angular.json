@@ -34,7 +34,12 @@
               "src/favicon.ico",
               "src/apple-touch-icon.png",
               "src/robots.txt",
-              "src/assets"
+              "src/assets",
+              {
+                "glob": "**/*",
+                "input": "node_modules/@fortawesome/fontawesome-free/webfonts",
+                "output": "webfonts"
+              }
             ],
             "styles": [
               "src/main.scss"

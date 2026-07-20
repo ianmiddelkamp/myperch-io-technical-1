@@ -4,19 +4,30 @@ import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { PaginatedResponse, Task } from './task.model';
 
+export type TaskStatusFilter = 'completed' | 'incomplete';
+
 @Injectable({ providedIn: 'root' })
 export class TaskService {
   private readonly baseUrl = `${environment.serverUrl}/tasks`;
 
   constructor(private http: HttpClient) {}
 
-  getTasks(page = 1, pageSize = 10, search = ''): Observable<PaginatedResponse<Task>> {
+  getTasks(
+    page = 1,
+    pageSize = 10,
+    search = '',
+    status?: TaskStatusFilter,
+  ): Observable<PaginatedResponse<Task>> {
     let params = new HttpParams()
       .set('page', page)
       .set('pageSize', pageSize);
 
     if (search) {
       params = params.set('search', search);
+    }
+
+    if (status) {
+      params = params.set('status', status);
     }
 
     return this.http.get<PaginatedResponse<Task>>(this.baseUrl, { params });

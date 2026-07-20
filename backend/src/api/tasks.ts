@@ -20,18 +20,29 @@ router.get('/', async (req, res: Response<GetPaginatedResponse<Task> | ErrorResp
     return;
   }
 
-  const { search } = req.query;
+  const { search, status } = req.query;
 
-  let where: WhereOptions | undefined;
+  if (status !== undefined && status !== 'completed' && status !== 'incomplete') {
+    res.status(400).json({ message: "status must be 'completed' or 'incomplete'" });
+    return;
+  }
+
+  const conditions: WhereOptions[] = [];
 
   if (typeof search === 'string' && search.trim().length > 0) {
-    where = {
+    conditions.push({
       [Op.or]: [
         { title: { [Op.iLike]: `%${search.trim()}%` } },
         { description: { [Op.iLike]: `%${search.trim()}%` } },
       ],
-    };
+    });
   }
+
+  if (status === 'completed' || status === 'incomplete') {
+    conditions.push({ completed: status === 'completed' });
+  }
+
+  const where: WhereOptions | undefined = conditions.length > 0 ? { [Op.and]: conditions } : undefined;
 
   try {
     const { rows: tasks, count: total } = await TaskModel.findAndCountAll({
