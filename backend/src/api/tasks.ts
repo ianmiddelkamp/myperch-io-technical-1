@@ -48,7 +48,7 @@ router.get('/', async (req, res: Response<GetPaginatedResponse<Task> | ErrorResp
   try {
     const { rows: tasks, count: total } = await TaskModel.findAndCountAll({
       where,
-      order: [['id', 'ASC']],
+      order: [['createdAt', 'ASC']],
       limit: pageSize,
       offset: (page - 1) * pageSize,
     });
@@ -180,6 +180,30 @@ router.patch('/:id', async (req, res: Response<CrudResponse<Task> | ErrorRespons
     await task.update(updates);
 
     res.json({ data: task as unknown as Task });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.delete('/:id', async (req, res: Response<ErrorResponse>, next: NextFunction) => {
+  const id = Number(req.params.id);
+
+  if (!Number.isInteger(id)) {
+    res.status(400).json({ message: 'id must be an integer' });
+    return;
+  }
+
+  try {
+    const task = await sequelize.models.Task.findByPk(id);
+
+    if (!task) {
+      res.status(404).json({ message: `Task ${id} not found` });
+      return;
+    }
+
+    await task.destroy();
+
+    res.status(204).send();
   } catch (error) {
     next(error);
   }
