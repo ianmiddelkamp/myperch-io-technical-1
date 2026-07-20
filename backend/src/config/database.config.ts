@@ -1,4 +1,5 @@
 import { SequelizeOptions } from 'sequelize-typescript';
+//import config from ../config/index';
 import {
   DB_DATABASE,
   DB_HOST,
