@@ -7,6 +7,10 @@ export interface Task {
   updatedAt?: string;
 }
 
+export interface CrudResponse<T> {
+  data: T;
+}
+
 export interface PaginatedResponse<T> {
   data: T[];
   pagination: {

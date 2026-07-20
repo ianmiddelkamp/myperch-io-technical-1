@@ -1,8 +1,9 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
-import { PaginatedResponse, Task } from './task.model';
+import { CrudResponse, PaginatedResponse, Task } from './task.model';
 
 export type TaskStatusFilter = 'completed' | 'incomplete';
 
@@ -31,5 +32,11 @@ export class TaskService {
     }
 
     return this.http.get<PaginatedResponse<Task>>(this.baseUrl, { params });
+  }
+
+  createTask(title: string, description: string): Observable<Task> {
+    return this.http
+      .post<CrudResponse<Task>>(this.baseUrl, { title, description })
+      .pipe(map(response => response.data));
   }
 }

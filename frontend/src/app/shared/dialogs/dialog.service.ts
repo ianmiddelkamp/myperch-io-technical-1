@@ -50,4 +50,16 @@ export class DialogService {
       () => null,
     );
   }
+
+  addTask(): Promise<EditTaskDialogResult | null> {
+    const modalRef = this.modalService.open(EditTaskDialogComponent);
+
+    modalRef.componentInstance.dialogTitle = 'Add Task';
+    modalRef.componentInstance.saveLabel = 'Add';
+
+    return modalRef.result.then(
+      (result: EditTaskDialogResult) => result,
+      () => null,
+    );
+  }
 }
