@@ -76,7 +76,7 @@ export class TaskListComponent implements OnInit {
     private taskService: TaskService,
     private localStorageService: LocalStorageService,
     private dialogService: DialogService,
-  ) {}
+  ) { }
 
   ngOnInit(): void {
     this.showCompleted = this.localStorageService.getItem<boolean>(SHOW_COMPLETED_STORAGE_KEY, false);
@@ -141,7 +141,7 @@ export class TaskListComponent implements OnInit {
   }
 
   goToPage(page: number): void {
-    if(this.actionInProgress) {
+    if (this.actionInProgress) {
       return;
     }
     if (page < 1 || page > this.totalPages) {
@@ -294,9 +294,26 @@ export class TaskListComponent implements OnInit {
     const startedAt = Date.now();
     const ids = selectedTasks.map(task => task.id);
 
+    // Marking tasks complete while the "incomplete only" filter is on makes
+    // them disappear from the current view. Splicing them out client-side
+    // would leave a partial page instead of backfilling from the next page,
+    // so that specific case gets a real refetch; every other case is cheap
+    // enough to just replace in place.
+    const willHideRows = completed && !this.showCompleted;
+
     this.taskService.bulkUpdateStatus(ids, completed).subscribe({
       next: updatedTasks => {
         this.finishRowAction(startedAt, () => {
+          if (willHideRows) {
+            selectedTasks.forEach(task => {
+              task.loading = false;
+              task.selected = false;
+            });
+            this.showToast(`${selectedTasks.length} task(s) marked complete.`, 'success');
+            this.fetchTasks();
+            return;
+          }
+
           // Replace in place instead of refetching, same as onEditTask, so
           // a bulk action doesn't reset/reload everything else on screen.
           const updatedById = new Map(updatedTasks.map(task => [task.id, task]));
@@ -315,7 +332,6 @@ export class TaskListComponent implements OnInit {
 
           this.updateSelectionState();
           this.showToast(`${selectedTasks.length} task(s) marked ${completed ? 'complete' : 'incomplete'}.`, 'success');
-          this.fetchTrigger$.next(); // refresh the list to update the "completed" filter if needed
         });
       },
       error: (err: HttpErrorResponse) => {
