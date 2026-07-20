@@ -33,10 +33,15 @@ const sampleTasks = [
 
 async function seed() {
   await sequelize.models.Task.bulkCreate(sampleTasks)
-    .catch(error => console.error(error))
+    .then(() => {
+      console.log(`Task seed complete (${sampleTasks.length} tasks)`);
+    })
+    .catch(error => {
+      console.error(error);
+      process.exitCode = 1;
+    })
     .finally(async () => {
       await sequelize.close();
-      console.log(`Task seed complete (${sampleTasks.length} tasks)`);
     });
 }
 
