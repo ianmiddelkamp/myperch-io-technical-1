@@ -45,4 +45,10 @@ export class TaskService {
       .patch<CrudResponse<Task>>(`${this.baseUrl}/${id}`, changes)
       .pipe(map(response => response.data));
   }
+
+  bulkUpdateStatus(ids: number[], completed: boolean): Observable<Task[]> {
+    return this.http
+      .patch<CrudResponse<Task[]>>(`${this.baseUrl}/bulk`, { ids, completed })
+      .pipe(map(response => response.data));
+  }
 }

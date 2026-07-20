@@ -125,14 +125,14 @@
       <span *ngIf="anySelected" class="text-muted small">{{ selectedCount }} selected</span> 
       <ul class="pagination">
         <li>
-          <a href="#" class="page-link" [class.disabled]="page <= 1"
+          <a href="#" class="page-link" [class.disabled]="page <= 1 || actionInProgress"
             (click)="$event.preventDefault(); goToPage(page - 1)">Previous</a>
         </li>
         <li>
           <span class="page-link status">Page {{ page }} of {{ totalPages }}</span>
         </li>
         <li>
-          <a href="#" class="page-link" [class.disabled]="page >= totalPages"
+          <a href="#" class="page-link" [class.disabled]="page >= totalPages || actionInProgress"
             (click)="$event.preventDefault(); goToPage(page + 1)">Next</a>
         </li>
       </ul>
