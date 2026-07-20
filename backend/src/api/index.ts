@@ -1,6 +1,7 @@
 import express from 'express';
 
 import peopleRouter from './people';
+import tasksRouter from './tasks';
 
 const router = express.Router();
 
@@ -11,5 +12,6 @@ router.get('/', (req, res) => {
 });
 
 router.use('/people', peopleRouter);
+router.use('/tasks', tasksRouter);
 
 export default router;
