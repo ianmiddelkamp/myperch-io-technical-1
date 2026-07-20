@@ -241,12 +241,25 @@ export class TaskListComponent implements OnInit {
 
     task.loading = true;
     this.actionInProgress = true;
+    const startedAt = Date.now();
 
-    // TODO: delete task. Wrap the actual DELETE call the same way onEditTask
-    // wraps its PATCH: task.loading/this.actionInProgress reset to false via
-    // finishRowAction() once the request settles.
-    task.loading = false;
-    this.actionInProgress = false;
+    this.taskService.deleteTask(task.id).subscribe({
+      next: () => {
+        this.finishRowAction(startedAt, () => {
+          // A deleted row can leave the current page short by one, so this
+          // needs a real refetch rather than just splicing it out locally,
+          // same reasoning as the bulk-mark-complete case.
+          this.showToast('Task deleted.', 'success');
+          this.fetchTasks();
+        });
+      },
+      error: (err: HttpErrorResponse) => {
+        this.finishRowAction(startedAt, () => {
+          task.loading = false;
+          this.showToast(err.error?.message || 'Failed to delete task.', 'danger');
+        });
+      },
+    });
   }
 
   onToggleComplete(task: Task): void {
@@ -259,20 +272,6 @@ export class TaskListComponent implements OnInit {
 
   async onBulkMarkIncomplete(): Promise<void> {
     await this.bulkUpdateStatus(false, 'Mark Incomplete');
-  }
-
-  async onBulkDelete(): Promise<void> {
-    const confirmed = await this.dialogService.confirm({
-      title: 'Delete tasks',
-      message: `Delete ${this.selectedCount} selected task(s)? This cannot be undone.`,
-      confirmLabel: 'Delete',
-    });
-
-    if (!confirmed) {
-      return;
-    }
-
-    // TODO: bulk delete
   }
 
   private async bulkUpdateStatus(completed: boolean, confirmLabel: string): Promise<void> {

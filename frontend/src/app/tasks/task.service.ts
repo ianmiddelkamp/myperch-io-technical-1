@@ -51,4 +51,8 @@ export class TaskService {
       .patch<CrudResponse<Task[]>>(`${this.baseUrl}/bulk`, { ids, completed })
       .pipe(map(response => response.data));
   }
+
+  deleteTask(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.baseUrl}/${id}`);
+  }
 }
