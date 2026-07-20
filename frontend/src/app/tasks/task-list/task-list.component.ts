@@ -10,9 +10,13 @@ import { TaskService } from '../task.service';
 const SEARCH_DEBOUNCE_MS = 300;
 const SHOW_COMPLETED_STORAGE_KEY = 'taskList.showCompleted';
 const TOAST_DURATION_MS = 4000;
+// Keeps the shimmer visible for at least this long, so a fast response
+// doesn't just flash the row instead of being perceptible.
+const MIN_ROW_LOADING_MS = 400;
 
 interface TaskRow extends Task {
   selected: boolean;
+  loading: boolean;
 }
 
 @Component({
@@ -54,6 +58,11 @@ export class TaskListComponent implements OnInit {
 
   allOnPageSelected = false;
 
+  // True while any single-row edit or delete is in flight. Bulk actions are
+  // disabled during this window to avoid a bulk operation racing/conflicting
+  // with a per-row one on the same data.
+  actionInProgress = false;
+
   private searchTimeout?: ReturnType<typeof setTimeout>;
 
   private toastTimeout?: ReturnType<typeof setTimeout>;
@@ -84,7 +93,7 @@ export class TaskListComponent implements OnInit {
       )
       .subscribe({
         next: response => {
-          this.tasks = response.data.map(task => ({ ...task, selected: false }));
+          this.tasks = response.data.map(task => ({ ...task, selected: false, loading: false }));
           this.total = response.pagination.total;
           this.totalPages = response.pagination.totalPages;
           this.loading = false;
@@ -179,17 +188,44 @@ export class TaskListComponent implements OnInit {
     }, TOAST_DURATION_MS);
   }
 
-  async onEditTask(task: Task): Promise<void> {
-    const result = await this.dialogService.editTask(task);
+  async onEditTask(task: TaskRow): Promise<void> {
+    // Copy so the dialog's initial values can't end up referencing (and the
+    // dialog's internal state can't accidentally mutate) the row still shown
+    // in the table while the user is editing.
+    const taskCopy = { ...task };
+    const result = await this.dialogService.editTask(taskCopy);
 
     if (!result) {
       return;
     }
 
-    // TODO: PATCH task title/description
+    task.loading = true;
+    this.actionInProgress = true;
+    const startedAt = Date.now();
+
+    this.taskService.updateTask(task.id, { title: result.title, description: result.description }).subscribe({
+      next: updated => {
+        this.finishRowAction(startedAt, () => {
+          // Replace in place instead of refetching the whole list, so
+          // editing one row doesn't reset/refresh everything else on screen.
+          task.title = updated.title;
+          task.description = updated.description;
+          task.completed = updated.completed;
+          task.updatedAt = updated.updatedAt;
+          task.loading = false;
+          this.showToast('Task updated.', 'success');
+        });
+      },
+      error: (err: HttpErrorResponse) => {
+        this.finishRowAction(startedAt, () => {
+          task.loading = false;
+          this.showToast(err.error?.message || 'Failed to update task.', 'danger');
+        });
+      },
+    });
   }
 
-  async onDeleteTask(task: Task): Promise<void> {
+  async onDeleteTask(task: TaskRow): Promise<void> {
     const confirmed = await this.dialogService.confirm({
       title: 'Delete task',
       message: `Delete "${task.title}"? This cannot be undone.`,
@@ -200,7 +236,14 @@ export class TaskListComponent implements OnInit {
       return;
     }
 
-    // TODO: delete task
+    task.loading = true;
+    this.actionInProgress = true;
+
+    // TODO: delete task. Wrap the actual DELETE call the same way onEditTask
+    // wraps its PATCH: task.loading/this.actionInProgress reset to false via
+    // finishRowAction() once the request settles.
+    task.loading = false;
+    this.actionInProgress = false;
   }
 
   onToggleComplete(task: Task): void {
@@ -245,6 +288,20 @@ export class TaskListComponent implements OnInit {
     }
 
     // TODO: bulk delete
+  }
+
+  // Applies a row-action's result (success or error) after waiting out
+  // whatever's left of MIN_ROW_LOADING_MS, so the shimmer never just flashes
+  // for a request that resolves faster than a human can perceive. Also
+  // clears actionInProgress, re-enabling the bulk action buttons.
+  private finishRowAction(startedAt: number, apply: () => void): void {
+    const elapsed = Date.now() - startedAt;
+    const remaining = Math.max(MIN_ROW_LOADING_MS - elapsed, 0);
+
+    setTimeout(() => {
+      apply();
+      this.actionInProgress = false;
+    }, remaining);
   }
 
   private updateSelectionState(): void {

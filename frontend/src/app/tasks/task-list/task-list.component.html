@@ -3,15 +3,15 @@
     <div class="d-flex gap-2 flex-wrap w-100 align-items-center">
 
 
-      <button type="button" class="btn btn-success" [disabled]="!anySelected || allSelectedCompleted"
+      <button type="button" class="btn btn-success" [disabled]="!anySelected || allSelectedCompleted || actionInProgress"
         (click)="onBulkMarkComplete()">
         Mark Complete
       </button>
-      <button type="button" class="btn btn-secondary" [disabled]="!anySelected || allSelectedIncomplete"
+      <button type="button" class="btn btn-secondary" [disabled]="!anySelected || allSelectedIncomplete || actionInProgress"
         (click)="onBulkMarkIncomplete()">
         Mark Incomplete
       </button>
-      <button type="button" class="btn btn-danger " [disabled]="!anySelected" (click)="onBulkDelete()">
+      <button type="button" class="btn btn-danger " [disabled]="!anySelected || actionInProgress" (click)="onBulkDelete()">
         Delete Selected
       </button>
       <button type="button" class="btn btn-primary ms-auto" (click)="onAddTask()">
@@ -78,9 +78,9 @@
         </tr>
       </thead>
       <tbody>
-        <tr *ngFor="let task of tasks" class="task-row">
+        <tr *ngFor="let task of tasks" class="task-row" [class.loading-row]="task.loading">
           <td>
-            <input type="checkbox" [checked]="task.selected" (change)="toggleSelection(task)" />
+            <input type="checkbox" [checked]="task.selected" [disabled]="task.loading" (change)="toggleSelection(task)" />
           </td>
           <td class="w-100">
             <div class="fw-bold" [class.text-decoration-line-through]="task.completed">
@@ -91,15 +91,15 @@
               Created: {{ task.createdAt | date: 'medium' }} &middot; Updated: {{ task.updatedAt | date: 'medium' }}
             </div>
           </td>
-         
+
           <td>
             <div class="d-flex gap-1">
               <button type="button" class="btn btn-sm btn-light" title="Edit" aria-label="Edit task"
-                (click)="onEditTask(task)">
+                [disabled]="task.loading" (click)="onEditTask(task)">
                 <i class="fas fa-pencil-alt text-secondary"></i>
               </button>
               <button type="button" class="btn btn-sm  btn-light" title="Delete" aria-label="Delete task"
-                (click)="onDeleteTask(task)">
+                [disabled]="task.loading" (click)="onDeleteTask(task)">
                 <i class="fas fa-trash text-danger"></i>
               </button>
             </div>
@@ -110,6 +110,7 @@
               class="btn btn-link p-0"
               [title]="task.completed ? 'Mark incomplete' : 'Mark complete'"
               [attr.aria-label]="task.completed ? 'Mark incomplete' : 'Mark complete'"
+              [disabled]="task.loading"
               (click)="onToggleComplete(task)"
             >
               <i class="fas fa-2x fa-check-circle text-success" *ngIf="task.completed"></i>
