@@ -12,8 +12,15 @@ const DEFAULT_PAGE_SIZE = 10;
 const MAX_PAGE_SIZE = 100;
 
 router.get('/', async (req, res: Response<GetPaginatedResponse<Task> | ErrorResponse>, next: NextFunction) => {
-  const page: number = Number(req.query.page) || 1;
-  const requestedPageSize: number = Number(req.query.pageSize) || DEFAULT_PAGE_SIZE;
+  // Only default when the param is omitted entirely; anything the client
+  // explicitly provided that fails validation below (0, negative,
+  // fractional, unparseable) gets rejected rather than silently coerced.
+  // Using `|| 1` here would silently turn an explicit page=0 into page 1
+  // instead of rejecting it, since 0 is falsy.
+  const page: number = req.query.page === undefined ? 1 : Number(req.query.page);
+  const requestedPageSize: number = req.query.pageSize === undefined
+    ? DEFAULT_PAGE_SIZE
+    : Number(req.query.pageSize);
   const pageSize: number = Math.min(requestedPageSize, MAX_PAGE_SIZE);
 
   if (!Number.isInteger(page) || !Number.isInteger(pageSize) || page < 1 || pageSize < 1) {
