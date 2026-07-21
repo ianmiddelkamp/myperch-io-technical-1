@@ -1,5 +1,6 @@
 import { HttpErrorResponse } from '@angular/common/http';
-import { Component, OnInit } from '@angular/core';
+import { Component, DestroyRef, OnInit } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Subject } from 'rxjs';
 import { switchMap } from 'rxjs/operators';
 import { DialogService } from '../../shared/dialogs/dialog.service';
@@ -76,6 +77,7 @@ export class TaskListComponent implements OnInit {
     private taskService: TaskService,
     private localStorageService: LocalStorageService,
     private dialogService: DialogService,
+    private destroyRef: DestroyRef,
   ) { }
 
   ngOnInit(): void {
@@ -90,6 +92,10 @@ export class TaskListComponent implements OnInit {
           const status = this.showCompleted ? undefined : 'incomplete';
           return this.taskService.getTasks(this.page, this.pageSize, this.searchTerm, status);
         }),
+        // fetchTrigger$ is a Subject that never completes on its own, so
+        // without this the subscription (and its switchMap'd HTTP calls)
+        // would keep running past this component's lifetime.
+        takeUntilDestroyed(this.destroyRef),
       )
       .subscribe({
         next: response => {
