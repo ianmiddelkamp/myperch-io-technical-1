@@ -1,9 +1,7 @@
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
-import { TranslateModule } from '@ngx-translate/core';
 
 import { provideRouter } from '@angular/router';
-import { I18nModule } from '@app/i18n';
 import { HeaderComponent } from './header.component';
 
 describe('HeaderComponent', () => {
@@ -12,7 +10,7 @@ describe('HeaderComponent', () => {
 
   beforeEach(waitForAsync(() => {
     TestBed.configureTestingModule({
-      imports: [NgbModule, TranslateModule.forRoot(), I18nModule],
+      imports: [NgbModule],
       declarations: [HeaderComponent],
       providers: [provideRouter([])],
     }).compileComponents();

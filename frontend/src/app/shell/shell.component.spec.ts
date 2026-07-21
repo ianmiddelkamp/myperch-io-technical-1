@@ -1,10 +1,8 @@
 import { waitForAsync, ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
-import { TranslateModule } from '@ngx-translate/core';
 import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
 
 
-import { I18nModule } from '@app/i18n';
 import { ShellComponent } from './shell.component';
 import { HeaderComponent } from './header/header.component';
 
@@ -15,8 +13,6 @@ describe('ShellComponent', () => {
   beforeEach(waitForAsync(() => {
     TestBed.configureTestingModule({
       imports: [
-        TranslateModule.forRoot(),
-        I18nModule,
         NgbModule
       ],
       providers: [

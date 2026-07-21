@@ -2,8 +2,8 @@
 
 A Task list app with an Angular frontend and an ExpressJS/TypeScript API backed by Postgres.
 
-- `backend/` — ExpressJS API (see `backend/README.md` for the original boilerplate docs)
-- `frontend/` — Angular app (see `frontend/README.md` for the original boilerplate docs)
+- `backend/` — ExpressJS API
+- `frontend/` — Angular app
 
 ## Running the app
 
