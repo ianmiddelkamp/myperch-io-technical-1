@@ -65,6 +65,25 @@ docker compose down -v
 docker compose up --build
 ```
 
+### Running backend tests
+
+```bash
+docker compose exec api npm run test:docker
+```
+
+`test:docker` overrides `DB_DATABASE` to `web-boilerplate-test` before running
+Jest — plain `npm test` inside the container would otherwise run against the dev
+database (`docker-compose.yml` hard-codes `DB_DATABASE=web-boilerplate` for the
+`api` service). As a second line of defense, `test/_setup/database.testSetup.ts`
+refuses to run at all against any database whose name doesn't end in `-test`, so
+a misconfigured run fails fast instead of truncating dev data.
+
+If the test database doesn't have the schema yet, sync it once:
+
+```bash
+docker compose exec -e DB_DATABASE=web-boilerplate-test -e NODE_ENV=test api npm run db:sync
+```
+
 ### Stopping / resetting
 
 ```bash
