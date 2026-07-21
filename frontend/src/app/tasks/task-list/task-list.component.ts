@@ -268,8 +268,42 @@ export class TaskListComponent implements OnInit {
     });
   }
 
-  onToggleComplete(task: Task): void {
-    // TODO: PATCH task completed status
+  onToggleComplete(task: TaskRow): void {
+    const newCompleted = !task.completed;
+
+    task.loading = true;
+    this.actionInProgress = true;
+    const startedAt = Date.now();
+
+    // Same reasoning as bulkUpdateStatus: marking complete while the
+    // "incomplete only" filter is on makes the row disappear, and updating
+    // it in place would leave a stale row instead of backfilling from the
+    // next page, so that specific case gets a real refetch.
+    const willHideRow = newCompleted && !this.showCompleted;
+
+    this.taskService.updateTask(task.id, { completed: newCompleted }).subscribe({
+      next: updated => {
+        this.finishRowAction(startedAt, () => {
+          if (willHideRow) {
+            task.loading = false;
+            this.showToast(`Task marked ${newCompleted ? 'complete' : 'incomplete'}.`, 'success');
+            this.fetchTasks();
+            return;
+          }
+
+          task.completed = updated.completed;
+          task.updatedAt = updated.updatedAt;
+          task.loading = false;
+          this.showToast(`Task marked ${newCompleted ? 'complete' : 'incomplete'}.`, 'success');
+        });
+      },
+      error: (err: HttpErrorResponse) => {
+        this.finishRowAction(startedAt, () => {
+          task.loading = false;
+          this.showToast(err.error?.message || 'Failed to update task.', 'danger');
+        });
+      },
+    });
   }
 
   async onBulkMarkComplete(): Promise<void> {
