@@ -55,11 +55,6 @@ fields, sync the schema manually:
 docker compose exec api npm run db:sync
 ```
 
-**Warning:** `db:sync` runs `sequelize.sync({ force: true })`, which drops and
-recreates every table — it will wipe existing data, including the seeded tasks. To
-get the sample tasks back afterward, reset the Postgres volume so the init scripts
-run again:
-
 ```bash
 docker compose down -v
 docker compose up --build
