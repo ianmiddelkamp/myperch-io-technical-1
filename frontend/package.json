@@ -1,5 +1,5 @@
 {
-  "name": "challenge",
+  "name": "tasks.io",
   "version": "1.0.0",
   "private": true,
   "scripts": {
@@ -25,7 +25,6 @@
     "@fortawesome/fontawesome-free": "^5.15.1",
     "@ng-bootstrap/ng-bootstrap": "^17.0.0",
     "@ngneat/until-destroy": "^10.0.0",
-    "@ngx-translate/core": "^15.0.0",
     "@popperjs/core": "^2.11.6",
     "bootstrap": "^5.2.3",
     "rxjs": "7.8.1",

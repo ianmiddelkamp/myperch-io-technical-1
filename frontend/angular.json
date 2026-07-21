@@ -3,7 +3,7 @@
   "version": 1,
   "newProjectRoot": "projects",
   "projects": {
-    "challenge": {
+    "tasks.io": {
       "projectType": "application",
       "schematics": {
         "@schematics/angular:component": {
@@ -90,10 +90,10 @@
           "builder": "@angular-devkit/build-angular:dev-server",
           "configurations": {
             "production": {
-              "buildTarget": "challenge:build:production"
+              "buildTarget": "tasks.io:build:production"
             },
             "development": {
-              "buildTarget": "challenge:build:development"
+              "buildTarget": "tasks.io:build:development"
             }
           },
           "defaultConfiguration": "development"
@@ -101,7 +101,7 @@
         "extract-i18n": {
           "builder": "@angular-devkit/build-angular:extract-i18n",
           "options": {
-            "buildTarget": "challenge:build"
+            "buildTarget": "tasks.io:build"
           }
         },
         "test": {
