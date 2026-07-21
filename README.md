@@ -27,36 +27,43 @@ Everything runs via Docker Compose — Postgres, the API, and the Angular dev se
    ```
 
    This builds the `api` and `app` images and starts three containers:
-   - `postgres` — Postgres/PostGIS, exposed on `5432`. On first startup it runs
-     `db-init/00-create-api-user.sh`, which creates the `api_user` role and the
-     `web-boilerplate` / `web-boilerplate-test` databases.
+   - `postgres` — Postgres/PostGIS, exposed on `5432`. On first startup (empty
+     volume only — these scripts never re-run on restart) it runs, in order:
+     - `db-init/00-create-api-user.sh` — creates the `api_user` role and the
+       `web-boilerplate` / `web-boilerplate-test` databases.
+     - `db-init/01-seed-tasks.sh` — creates the `Task` table and inserts ~28
+       sample tasks, so the app has real data to show immediately with zero
+       manual steps.
    - `api` — the Express API (nodemon, hot-reload), exposed on `3000`.
    - `app` — the Angular dev server, exposed on `4200`.
 
-3. The database schema isn't created automatically. The first time (or after model
-   changes), sync it:
-
-   ```bash
-   docker compose exec api npm run db:sync
-   ```
-
-4. Open the app at [http://localhost:4200](http://localhost:4200). It talks to the API
+3. Open the app at [http://localhost:4200](http://localhost:4200). It talks to the API
    through the dev-server proxy (`frontend/proxy.conf.js`) at `/api`, which is rewritten
    to the `api` container's `/v1` routes.
 
 The API is also reachable directly at [http://localhost:3000](http://localhost:3000)
 (e.g. `GET /v1/tasks`).
 
-### Seeding sample data (optional)
+### Schema changes / more sample data
 
-To populate a handful of sample tasks for manual testing:
+`db-init/01-seed-tasks.sh` only runs once, when Postgres initializes with an empty
+volume — it won't re-run on `docker compose restart` or `up` against an existing
+volume, so it can never wipe data you've added since. If you change `Task`'s model
+fields, sync the schema manually:
 
 ```bash
-docker compose exec api npm run db:seed
+docker compose exec api npm run db:sync
 ```
 
-This just inserts rows (`bulkCreate`, no truncation first), so running it more than
-once will duplicate the sample tasks — fine for poking around, but not idempotent.
+**Warning:** `db:sync` runs `sequelize.sync({ force: true })`, which drops and
+recreates every table — it will wipe existing data, including the seeded tasks. To
+get the sample tasks back afterward, reset the Postgres volume so the init scripts
+run again:
+
+```bash
+docker compose down -v
+docker compose up --build
+```
 
 ### Stopping / resetting
 
